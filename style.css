@@ -1,22 +1,24 @@
-/* variaveis css - facilitar o uso de temas para formatação */
-:root{
-    --gradient-fundo:linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+/* Variáveis para facilidade de temas (Limpo e Tons Pastéis) */
+:root {
+    --gradiente-fundo: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
     --fundo-cartao: #ffffff;
     --cor-texto: #2d3748;
-    --cor-primairio: #6c5ce7;
-    --cor-primaria-destaque: #5d4bc4;
+    --cor-primaria: #6c5ce7;
+    --cor-primaria-destaque: #5b4bc4;
     --cor-borda: #edf2f7;
     --cor-perigo: #ff7675;
     --cor-concluido: #a0aec0;
 }
-/* Modo escuro */
-body.modo-escuro{
-    --gradient-fundo: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+
+/* Modo Escuro (Ativado via classe no body) */
+body.modo-escuro {
+    --gradiente-fundo: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
     --fundo-cartao: #1a202c;
     --cor-texto: #f7fafc;
     --cor-borda: #4a5568;
 }
-*{
+
+* {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -24,8 +26,8 @@ body.modo-escuro{
     transition: background 0.3s, color 0.3s;
 }
 
-body{
-    background: var(--gradient-fundo);
+body {
+    background: var(--gradiente-fundo);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -33,27 +35,29 @@ body{
     padding: 20px;
 }
 
-.cartao-aplicacao{
+.cartao-aplicacao {
     background: var(--fundo-cartao);
     color: var(--cor-texto);
+    width: 100%;
     max-width: 420px;
     border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
 
-.cabecalho-aplicacao{
+.cabecalho-aplicacao {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 25px;
 }
-.cabecalho-aplicacao h1{
+
+.cabecalho-aplicacao h1 {
     font-size: 1.5rem;
     font-weight: 700;
 }
 
-.botao-icone{
+.botao-icone {
     background: transparent;
     border: none;
     font-size: 1.2rem;
@@ -61,13 +65,13 @@ body{
     cursor: pointer;
 }
 
-.caixa-entrada{
+.caixa-entrada {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
 }
 
-input[type="text"]{
+input[type="text"] {
     flex: 1;
     padding: 12px 15px;
     border: 2px solid var(--cor-borda);
@@ -78,12 +82,12 @@ input[type="text"]{
     color: var(--cor-texto);
 }
 
-input[type="text"]:focus{
-    border-color: var(--cor-primairio);
+input[type="text"]:focus {
+    border-color: var(--cor-primaria);
 }
 
-.botao-principal{
-    background: var(--cor-primairio);
+.botao-principal {
+    background: var(--cor-primaria);
     color: white;
     border: none;
     padding: 12px 18px;
@@ -93,18 +97,18 @@ input[type="text"]:focus{
     transition: transform 0.1s, background 0.2s;
 }
 
-.botao-principal:hover{
+.botao-principal:hover {
     background: var(--cor-primaria-destaque);
-    transform: translateY(2px);
+    transform: translateY(-2px);
 }
 
-.lista-tarefa{
+.lista-tarefas {
     list-style: none;
-    max-width: 280px;
+    max-height: 280px;
     overflow-y: auto;
 }
 
-.item-tarefa{
+.item-tarefa {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -115,22 +119,17 @@ input[type="text"]:focus{
     animation: aparecer 0.3s ease;
 }
 
-.item-tarefa.concluido span{
+.item-tarefa.concluido span {
     text-decoration: line-through;
     color: var(--cor-concluido);
 }
 
-.item-tarefa.concluido span{
-    text-decoration: line-through;
-    color: var(--cor-concluido);
-}
-
-.acoes-tarefa{
+.acoes-tarefa {
     display: flex;
     gap: 8px;
 }
 
-.botao-acao{
+.botao-acao {
     background: none;
     border: none;
     cursor: pointer;
@@ -138,10 +137,11 @@ input[type="text"]:focus{
     color: var(--cor-texto);
 }
 
-.botao-acao.excluir:hover{
+.botao-acao.excluir:hover {
     color: var(--cor-perigo);
 }
-.rodape-aplicacao{
+
+.rodape-aplicacao {
     margin-top: 15px;
     font-size: 0.85rem;
     color: var(--cor-concluido);
@@ -149,10 +149,84 @@ input[type="text"]:focus{
 }
 
 @keyframes aparecer {
-    from{
-        opacity: 0; transform: translateY(10px);
-    }
-    to{
-        opacity: 1; transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* BOTÕES DAS TAREFAS */
+
+.acoes-tarefa {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+/* CONCLUIR */
+
+.botao-concluir {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-size: 18px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.botao-concluir:hover {
+    transform: scale(1.15);
+}
+
+
+/* LIXEIRA */
+
+.botao-excluir {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-size: 18px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+
+/* LIXEIRA FICA VERMELHA AO PASSAR O MOUSE */
+
+.botao-excluir:hover {
+    color: #ff3b3b;
+    transform: scale(1.15);
+}
+
+/* BARRRA DE ROLAGEM VERTICAL */
+
+.lista-tarefas {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.lista-tarefas::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lista-tarefas::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lista-tarefas::-webkit-scrollbar-thumb {
+    background: #aaa;
+    border-radius: 10px;
+}
+
+.lista-tarefas::-webkit-scrollbar-thumb:hover {
+    background: #888;
 }

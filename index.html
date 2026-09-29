@@ -1,35 +1,36 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Painel de Tarefa</title>
+    <title>Meu Painel de Tarefas - SENAI</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Biblioteca de ícones (Font Awesome) para compor a interface -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="cartao-aplicacao">
         <header class="cabecalho-aplicacao">
-            <h1>Minhas Tarefa</h1>
-            <button class="botao-icone" id="botao-alternar-tema">
+            <h1>Minhas Tarefas ✨</h1>
+            <button id="botao-alternar-tema" class="botao-icone">
                 <i class="fa-solid fa-moon"></i>
             </button>
         </header>
+
         <div class="caixa-entrada">
             <input type="text" id="campo-tarefa" placeholder="O que vamos fazer hoje?..." maxlength="40">
-            <button class="botao-principal" id="botao-adicionar"> 
-                <i class="fa-solid fa-plus"></i>Adicionar
+            <button id="botao-adicionar" class="botao-principal">
+                <i class="fa-solid fa-plus"></i> Adicionar
             </button>
         </div>
-        <ul class="lista-tarefas" id="lista-tarefa">
-            <!-- As Tarefas serão inceridas dinamicamente 
-                via JavaScript-->
+
+        <ul id="lista-tarefas" class="lista-tarefas">
+            <!-- As tarefas serão inseridas aqui dinamicamente via JavaScript -->
         </ul>
+
         <footer class="rodape-aplicacao">
-            <span id="contador-tarefa">0 tarefa na lista</span>
+            <span id="contador-tarefas">0 tarefas na lista</span>
         </footer>
     </div>
-
 
     <script src="script.js"></script>
 </body>
