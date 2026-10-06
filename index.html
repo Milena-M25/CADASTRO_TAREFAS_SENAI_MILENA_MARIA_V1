@@ -1,4 +1,5 @@
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -6,31 +7,38 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="cartao-aplicacao">
         <header class="cabecalho-aplicacao">
-            <h1>Minhas Tarefas ✨</h1>
-            <button id="botao-alternar-tema" class="botao-icone">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-        </header>
+            <div class="titulo-com-foto">
+                <img src="Foto minha.png" alt="My photo">
+                    <h1> Minhas Tarefas✨ </h1>​
+    </div>
+    <button id="botao-alternar-tema" class="botao-icone">
+        <i class="fa-solid fa-moon"></i>
+    </button>
+    </header>
 
-        <div class="caixa-entrada">
-            <input type="text" id="campo-tarefa" placeholder="O que vamos fazer hoje?..." maxlength="40">
-            <button id="botao-adicionar" class="botao-principal">
-                <i class="fa-solid fa-plus"></i> Adicionar
-            </button>
-        </div>
-
-        <ul id="lista-tarefas" class="lista-tarefas">
-            <!-- As tarefas serão inseridas aqui dinamicamente via JavaScript -->
-        </ul>
-
-        <footer class="rodape-aplicacao">
-            <span id="contador-tarefas">0 tarefas na lista</span>
-        </footer>
+    <div class="caixa-entrada">
+        <input type="text" id="campo-tarefa" placeholder="O que vamos fazer hoje?..." maxlength="40">
+        <button id="botao-adicionar" class="botao-principal">
+            <i class="fa-solid fa-plus"></i> Adicionar
+        </button>
     </div>
 
+    <input type="datetime-local" id="campo-prazo">
+
+    <ul id="lista-tarefas" class="lista-tarefas">
+        <!-- As tarefas serão inseridas aqui dinamicamente via JavaScript -->
+    </ul>
+
+    <footer class="rodape-aplicacao">
+        <span id="contador-tarefas">0 tarefas na lista</span>
+        <span id="contador-concluidas">0 concluídas</span>
+    </footer>
+    
     <script src="script.js"></script>
 </body>
+
 </html>

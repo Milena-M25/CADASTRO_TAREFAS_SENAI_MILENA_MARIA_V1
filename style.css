@@ -1,6 +1,6 @@
 /* Variáveis para facilidade de temas (Limpo e Tons Pastéis) */
 :root {
-    --gradiente-fundo: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    --gradiente-fundo: url("tela de fundo.png");
     --fundo-cartao: #ffffff;
     --cor-texto: #2d3748;
     --cor-primaria: #6c5ce7;
@@ -12,7 +12,7 @@
 
 /* Modo Escuro (Ativado via classe no body) */
 body.modo-escuro {
-    --gradiente-fundo: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    --gradiente-fundo: url("tela de fundo escuro.png");
     --fundo-cartao: #1a202c;
     --cor-texto: #f7fafc;
     --cor-borda: #4a5568;
@@ -33,6 +33,10 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
+    background: var(--gradiente-fundo);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }
 
 .cartao-aplicacao {
@@ -141,6 +145,11 @@ input[type="text"]:focus {
     color: var(--cor-perigo);
 }
 
+.botao-acao.concluir:hover {
+    color: #38a169;
+    background:rgba(56, 161, 105, 0.1);
+}
+
 .rodape-aplicacao {
     margin-top: 15px;
     font-size: 0.85rem;
@@ -148,7 +157,42 @@ input[type="text"]:focus {
     text-align: center;
 }
 
+.contadores {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+}
+
 @keyframes aparecer {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+.titulo-com-foto {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.titulo-com-foto img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--cor-primaria);
+}
+
+.titulo-com-foto h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.informacoes-tarefa small {
+    font-size: 0.72rem;
+    color: var(--cor-concluido);
 }
