@@ -13,32 +13,38 @@
         <header class="cabecalho-aplicacao">
             <div class="titulo-com-foto">
                 <img src="Foto minha.png" alt="My photo">
-                    <h1> Minhas Tarefas✨ </h1>​
-    </div>
-    <button id="botao-alternar-tema" class="botao-icone">
-        <i class="fa-solid fa-moon"></i>
-    </button>
-    </header>
+                <h1> Minhas Tarefas✨ </h1>​
+            </div>
+            <button id="botao-alternar-tema" class="botao-icone">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </header>
 
-    <div class="caixa-entrada">
-        <input type="text" id="campo-tarefa" placeholder="O que vamos fazer hoje?..." maxlength="40">
-        <button id="botao-adicionar" class="botao-principal">
-            <i class="fa-solid fa-plus"></i> Adicionar
-        </button>
-    </div>
+        <div class="caixa-entrada">
+            <input type="text" id="campo-tarefa" placeholder="O que vamos fazer hoje?..." maxlength="40">
+            <button id="botao-adicionar" class="botao-principal">
+                <i class="fa-solid fa-plus"></i> Adicionar
+            </button>
+        </div>
 
-    <input type="datetime-local" id="campo-prazo">
+        <div class="area-prazo"> <label for="campo-prazo"> <i class="fa-regular fa-calendar"></i> Prazo: </label> <input
+                type="datetime-local" id="campo-prazo"> </div>
 
-    <ul id="lista-tarefas" class="lista-tarefas">
-        <!-- As tarefas serão inseridas aqui dinamicamente via JavaScript -->
-    </ul>
+        <div class="area-pesquisa"> <i class="fa-solid fa-magnifying-glass"></i> <input type="text" id="campo-pesquisa"
+                placeholder="Pesquisar tarefa..."> </div>
 
-    <footer class="rodape-aplicacao">
-        <span id="contador-tarefas">0 tarefas na lista</span>
-        <span id="contador-concluidas">0 concluídas</span>
-    </footer>
-    
-    <script src="script.js"></script>
+        <button id="botao-limpar" class="botao-limpar"> <i class="fa-solid fa-trash-can"></i> Limpar todas </button>
+
+        <ul id="lista-tarefas" class="lista-tarefas">
+            <!-- As tarefas serão inseridas aqui dinamicamente via JavaScript -->
+        </ul>
+
+        <footer class="rodape-aplicacao">
+            <span id="contador-tarefas">0 tarefas na lista</span>
+            <span id="contador-concluidas">0 concluídas</span>
+        </footer>
+
+        <script src="script.js"></script>
 </body>
 
 </html>
