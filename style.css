@@ -12,7 +12,7 @@
 }
 
 body.modo-escuro {
-    --gradiente-fundo: url("fundoescuro.jpg");
+    --gradiente-fundo: url("fundo.jpg");
     --fundo-cartao: #292017;
     --cor-texto: #ead7ad;
     --cor-primaria: #a87532;
