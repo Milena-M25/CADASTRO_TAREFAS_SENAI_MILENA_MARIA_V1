@@ -129,31 +129,6 @@ function atualizarConcluidas() {
     }
 }
 
-function pesquisarTarefas() {
-    if (!campoPesquisa) {
-        return;
-    }
-
-    const pesquisa = campoPesquisa.value
-        .toLowerCase()
-        .trim();
-
-    const tarefas =
-        listaTarefas.querySelectorAll('.item-tarefa');
-
-    tarefas.forEach(function (tarefa) {
-        const texto = tarefa
-            .querySelector('.texto-tarefa')
-            .textContent
-            .toLowerCase();
-
-        tarefa.style.display =
-            texto.includes(pesquisa)
-                ? 'flex'
-                : 'none';
-    });
-}
-
 function limparTodasAsTarefas() {
     if (totalDeTarefas === 0) {
         alert('Não existem tarefas para limpar.');
