@@ -1,865 +1,1334 @@
 
-// ==========================================
-// MEU PAINEL DE TAREFAS - SENAI
-// ==========================================
+const $ = (id) => document.getElementById(id);
 
-const $ = id => document.getElementById(id);
+const campoTarefa = $("campo-tarefa");
+const formulario = $("formulario-tarefa");
+const listaTarefas = $("lista-tarefas");
+const campoPesquisa = $("campo-pesquisa");
+const filtroStatus = $("filtro-status");
+const filtroOrdem = $("filtro-ordem");
+const filtroPrioridade = $("filtro-prioridade");
+const botaoFuncoes = $("botao-funcoes");
+const listaFuncoes = $("lista-funcoes");
 
-const CHAVE_TAREFAS = "senai_painel_tarefas_v3";
-const CHAVE_LIXEIRA = "senai_painel_lixeira_v3";
-const CHAVE_TEMA = "senai_painel_tema_v3";
-const CHAVE_META = "senai_painel_meta_v3";
+const CHAVE = "senai_painel_tarefas_elegante";
+const CHAVE_HISTORICO = "senai_painel_historico";
 
-function ler(chave, padrao) {
+let tarefas = carregarJSON(CHAVE, []);
+let historico = carregarJSON(CHAVE_HISTORICO, []);
+let idEmEdicao = null;
+let intervaloPomodoro = null;
+let segundosRestantes = 25 * 60;
+let temporizadorNotificacao = null;
+let mostrarLixeira = false;
+let idsAvisados = new Set();
+
+/* FUNÇÕES AUXILIARES */
+
+function carregarJSON(chave, padrao) {
   try {
-    const valor = localStorage.getItem(chave);
-    return valor === null ? padrao : JSON.parse(valor);
+    const dados = JSON.parse(localStorage.getItem(chave));
+
+    return Array.isArray(padrao)
+      ? (Array.isArray(dados) ? dados : padrao)
+      : (dados ?? padrao);
   } catch {
     return padrao;
   }
 }
 
-function gravar(chave, valor) {
-  try {
-    localStorage.setItem(chave, JSON.stringify(valor));
-    return true;
-  } catch {
-    alert("Não foi possível salvar os dados no navegador.");
-    return false;
-  }
+function salvarTarefas() {
+  localStorage.setItem(CHAVE, JSON.stringify(tarefas));
+  localStorage.setItem(CHAVE_HISTORICO, JSON.stringify(historico));
+}
+
+function mostrarNotificacao(mensagem) {
+  const caixa = $("notificacao");
+
+  caixa.textContent = mensagem;
+  caixa.classList.remove("escondido");
+
+  clearTimeout(temporizadorNotificacao);
+
+  temporizadorNotificacao = setTimeout(() => {
+    caixa.classList.add("escondido");
+  }, 3500);
 }
 
 function gerarId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 8);
 }
 
-function normalizarTarefa(t) {
-  return {
-    id: t.id || gerarId(),
-    texto: String(t.texto || t.nome || ""),
-    prioridade: ["alta", "media", "baixa"].includes(t.prioridade)
-      ? t.prioridade : "media",
-    data: t.data || "",
-    concluida: Boolean(t.concluida ?? t.concluido),
-    concluidaEm: t.concluidaEm || null,
-    favorita: Boolean(t.favorita),
-    criacao: Number(t.criacao) || Date.now()
-  };
+function dataLocalISO(data = new Date()) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
 }
 
-let tarefas = ler(CHAVE_TAREFAS, null);
-if (!Array.isArray(tarefas)) {
-  tarefas = ler("senai_painel_tarefas_v2", null);
-}
-if (!Array.isArray(tarefas)) {
-  tarefas = ler("minhasTarefas", []);
-}
-tarefas = tarefas.map(normalizarTarefa);
+function dataParaTexto(valor) {
+  if (!valor) return "";
 
-let lixeira = ler(CHAVE_LIXEIRA, null);
-if (!Array.isArray(lixeira)) {
-  lixeira = ler("senai_painel_lixeira_v2", []);
-}
-lixeira = lixeira.map(normalizarTarefa);
+  const [ano, mes, dia] = valor.split("-").map(Number);
 
-let metaDiaria = Number(ler(CHAVE_META, 5));
-if (!Number.isFinite(metaDiaria) || metaDiaria < 1) metaDiaria = 5;
-
-gravar(CHAVE_TAREFAS, tarefas);
-
-// ==========================================
-// ELEMENTOS DO HTML
-// ==========================================
-
-const form = $("form-tarefa");
-const campoTarefa = $("campo-tarefa");
-const campoPrioridade = $("campo-prioridade");
-const campoData = $("campo-data");
-const campoPesquisa = $("campo-pesquisa");
-const filtroStatus = $("filtro-status");
-const ordenacao = $("ordenacao");
-
-const listaTarefas = $("lista-tarefas");
-const mensagemVazia = $("mensagem-vazia");
-
-const totalTarefas = $("total-tarefas");
-const totalPendentes = $("total-pendentes");
-const totalConcluidas = $("total-concluidas");
-const porcentagem = $("porcentagem");
-const barraPreenchida = $("barra-preenchida");
-const textoProgresso = $("texto-progresso");
-
-const botaoTema = $("botao-tema");
-const botaoInfo = $("botao-info");
-const modalInfo = $("modal-info");
-const fecharModal = $("fechar-modal");
-const entendiModal = $("entendi-modal");
-
-const botaoExportar = $("botao-exportar");
-const botaoLimpar = $("botao-limpar");
-const botaoLixeira = $("botao-lixeira");
-const fecharLixeira = $("fechar-lixeira");
-const esvaziarLixeira = $("esvaziar-lixeira");
-const secaoLixeira = $("secao-lixeira");
-const listaLixeira = $("lista-lixeira");
-const lixeiraVazia = $("lixeira-vazia");
-
-// ==========================================
-// FUNÇÕES AUXILIARES
-// ==========================================
-
-function salvarTarefas() {
-  return gravar(CHAVE_TAREFAS, tarefas);
+  return new Date(ano, mes - 1, dia).toLocaleDateString("pt-BR");
 }
 
-function salvarLixeira() {
-  return gravar(CHAVE_LIXEIRA, lixeira);
+function ehAtrasada(tarefa) {
+  return Boolean(
+    tarefa.prazo &&
+    !tarefa.concluida &&
+    !tarefa.excluida &&
+    tarefa.prazo < dataLocalISO()
+  );
 }
 
-function formatarData(data) {
-  if (!data) return "";
-  const [ano, mes, dia] = data.split("-");
-  return `${dia}/${mes}/${ano}`;
+function tarefasAtivas() {
+  return tarefas.filter(t => !t.excluida);
 }
 
-function hojeISO() {
-  const hoje = new Date();
-  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+function prioridadesNumero(valor) {
+  return { alta: 3, media: 2, baixa: 1 }[valor] || 2;
 }
 
-function criarBotao(icone, titulo, classe, acao) {
+function criarBotao(icone, classe, titulo, acao) {
   const botao = document.createElement("button");
+
   botao.type = "button";
-  botao.className = "botao-acao " + (classe || "");
+  botao.className = `acao-tarefa ${classe}`;
   botao.title = titulo;
   botao.setAttribute("aria-label", titulo);
 
-  const simbolo = document.createElement("i");
-  simbolo.className = icone;
-  botao.appendChild(simbolo);
+  const i = document.createElement("i");
+  i.className = icone;
+
+  botao.appendChild(i);
   botao.addEventListener("click", acao);
 
   return botao;
 }
 
-function criarTarefa(texto, prioridade, data) {
-  return {
-    id: gerarId(),
-    texto,
-    prioridade: prioridade || "media",
-    data: data || "",
-    concluida: false,
-    concluidaEm: null,
-    favorita: false,
-    criacao: Date.now()
-  };
-}
+/* 1, 3, 4, 6 E 8 — ADICIONAR E EDITAR TAREFAS */
 
-// ==========================================
-// ADICIONAR TAREFAS
-// ==========================================
-
-form.addEventListener("submit", evento => {
+formulario.addEventListener("submit", evento => {
   evento.preventDefault();
 
   const texto = campoTarefa.value.trim();
+
   if (!texto) {
-    campoTarefa.focus();
+    mostrarNotificacao("Digite o nome da tarefa.");
     return;
   }
 
-  const tarefa = criarTarefa(
-    texto,
-    campoPrioridade.value,
-    campoData.value
-  );
+  const prioridade = $("campo-prioridade").value;
+  const prazo = $("campo-prazo").value;
 
-  tarefas.unshift(tarefa);
+  const subtarefas = $("campo-subtarefas").value
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(texto => ({
+      id: gerarId(),
+      texto,
+      concluida: false
+    }));
 
-  if (!salvarTarefas()) {
-    tarefas = tarefas.filter(t => t.id !== tarefa.id);
-    return;
+  if (idEmEdicao !== null) {
+    const tarefa = tarefas.find(t => t.id === idEmEdicao);
+
+    if (tarefa) {
+      tarefa.texto = texto;
+      tarefa.prioridade = prioridade;
+      tarefa.prazo = prazo;
+
+      if ($("campo-subtarefas").value.trim()) {
+        tarefa.subtarefas = subtarefas;
+      }
+    }
+
+    cancelarEdicao();
+    mostrarNotificacao("Tarefa atualizada com sucesso.");
+  } else {
+    tarefas.unshift({
+      id: gerarId(),
+      texto,
+      concluida: false,
+      favorita: false,
+      criadaEm: Date.now(),
+      prioridade,
+      prazo,
+      subtarefas,
+      excluida: false,
+      concluidaEm: null
+    });
+
+    formulario.reset();
+    $("campo-prioridade").value = "media";
+
+    mostrarNotificacao("Sua nova tarefa foi adicionada.");
   }
 
-  form.reset();
-  campoPrioridade.value = "media";
-  campoTarefa.focus();
-  atualizarTudo();
+  salvarTarefas();
+  renderizarTarefas();
+  renderizarCalendario();
+  atualizarHistorico();
+  verificarAtrasadas();
 });
 
-// ==========================================
-// PESQUISA, FILTROS E ORDENAÇÃO
-// ==========================================
+function editarTarefa(id) {
+  const tarefa = tarefas.find(t => t.id === id && !t.excluida);
 
-campoPesquisa.addEventListener("input", renderizarTarefas);
-filtroStatus.addEventListener("change", renderizarTarefas);
-ordenacao.addEventListener("change", renderizarTarefas);
+  if (!tarefa) return;
 
-function obterTarefasVisiveis() {
-  const pesquisa = campoPesquisa.value.trim().toLocaleLowerCase("pt-BR");
-  const filtro = filtroStatus.value;
+  idEmEdicao = id;
+  campoTarefa.value = tarefa.texto;
 
-  const resultado = tarefas.filter(tarefa => {
-    const combinaTexto = tarefa.texto
+  $("campo-prioridade").value = tarefa.prioridade || "media";
+  $("campo-prazo").value = tarefa.prazo || "";
+
+  $("campo-subtarefas").value =
+    (tarefa.subtarefas || []).map(s => s.texto).join(", ");
+
+  $("titulo-formulario").textContent = "Editar tarefa";
+
+  $("botao-adicionar").innerHTML =
+    '<i class="fa-regular fa-floppy-disk"></i> Salvar alterações';
+
+  $("botoes-edicao").classList.remove("escondido");
+
+  $("secao-formulario").scrollIntoView({
+    behavior: "smooth"
+  });
+
+  campoTarefa.focus();
+}
+
+function cancelarEdicao() {
+  idEmEdicao = null;
+
+  formulario.reset();
+
+  $("campo-prioridade").value = "media";
+  $("titulo-formulario").textContent = "Nova tarefa";
+
+  $("botao-adicionar").innerHTML =
+    '<i class="fa-solid fa-plus"></i> Adicionar';
+
+  $("botoes-edicao").classList.add("escondido");
+}
+
+$("botao-cancelar-edicao").addEventListener(
+  "click",
+  cancelarEdicao
+);
+
+/* 7 — CONCLUIR TAREFAS E REGISTRAR O HISTÓRICO */
+
+function alternarConclusao(id) {
+  const tarefa = tarefas.find(t => t.id === id && !t.excluida);
+
+  if (!tarefa) return;
+
+  tarefa.concluida = !tarefa.concluida;
+
+  if (tarefa.concluida) {
+    tarefa.concluidaEm = Date.now();
+
+    historico.unshift({
+      id: gerarId(),
+      tarefaId: tarefa.id,
+      texto: tarefa.texto,
+      data: tarefa.concluidaEm
+    });
+
+    mostrarNotificacao("Tarefa concluída! ✨");
+  } else {
+    tarefa.concluidaEm = null;
+
+    historico = historico.filter(
+      h => h.tarefaId !== tarefa.id
+    );
+
+    mostrarNotificacao("Tarefa voltou para pendentes.");
+  }
+
+  salvarTarefas();
+  renderizarTarefas();
+  atualizarHistorico();
+  renderizarCalendario();
+}
+
+/* 9 — FAVORITAR TAREFAS */
+
+function alternarFavorita(id) {
+  const tarefa = tarefas.find(t => t.id === id);
+
+  if (!tarefa) return;
+
+  tarefa.favorita = !tarefa.favorita;
+
+  salvarTarefas();
+  renderizarTarefas();
+
+  mostrarNotificacao(
+    tarefa.favorita
+      ? "Adicionada às favoritas."
+      : "Removida das favoritas."
+  );
+}
+
+/* 10 — DUPLICAR TAREFAS */
+
+function duplicarTarefa(id) {
+  const tarefa = tarefas.find(
+    t => t.id === id && !t.excluida
+  );
+
+  if (!tarefa) return;
+
+  const copia = {
+    ...tarefa,
+    id: gerarId(),
+    texto: `${tarefa.texto} (cópia)`,
+    criadaEm: Date.now(),
+    concluida: false,
+    concluidaEm: null,
+    favorita: false,
+    excluida: false,
+
+    subtarefas: (tarefa.subtarefas || []).map(s => ({
+      ...s,
+      id: gerarId(),
+      concluida: false
+    }))
+  };
+
+  tarefas.unshift(copia);
+
+  salvarTarefas();
+  renderizarTarefas();
+
+  mostrarNotificacao("Tarefa duplicada.");
+}
+
+/* 8 — MARCAR SUBTAREFAS */
+
+function alternarSubtarefa(tarefaId, subtarefaId, marcada) {
+  const tarefa = tarefas.find(t => t.id === tarefaId);
+
+  const subtarefa = tarefa?.subtarefas?.find(
+    s => s.id === subtarefaId
+  );
+
+  if (!subtarefa) return;
+
+  subtarefa.concluida = marcada;
+
+  salvarTarefas();
+  renderizarTarefas();
+}
+
+function criarEtiqueta(texto, classe = "") {
+  const span = document.createElement("span");
+
+  span.className = `etiqueta ${classe}`.trim();
+  span.textContent = texto;
+
+  return span;
+}
+
+/* 1, 2, 3, 4, 5, 8 E 9 — PESQUISAR, FILTRAR E MOSTRAR TAREFAS */
+
+function renderizarTarefas() {
+  listaTarefas.innerHTML = "";
+
+  let visiveis = tarefasAtivas();
+
+  if (mostrarLixeira) {
+    $("titulo-lista").textContent = "Tarefas na lixeira";
+
+    $("botao-sair-lixeira").classList.remove("escondido");
+    $("filtro-status").disabled = true;
+    $("filtro-prioridade").disabled = true;
+
+    listaTarefas.classList.add("escondido");
+    $("mensagem-vazia").classList.add("escondido");
+    $("secao-lixeira").classList.remove("escondido");
+
+    renderizarLixeira();
+    return;
+  }
+
+  $("titulo-lista").textContent = "Lista de tarefas";
+
+  $("botao-sair-lixeira").classList.add("escondido");
+  $("filtro-status").disabled = false;
+  $("filtro-prioridade").disabled = false;
+
+  listaTarefas.classList.remove("escondido");
+  $("secao-lixeira").classList.add("escondido");
+
+  const pesquisa = campoPesquisa.value
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+
+  const status = filtroStatus.value;
+  const prioridade = filtroPrioridade.value;
+  const ordem = filtroOrdem.value;
+
+  visiveis = visiveis.filter(t => {
+    const textoCombina = t.texto
       .toLocaleLowerCase("pt-BR")
       .includes(pesquisa);
 
-    let combinaFiltro = true;
+    const statusCombina =
+      status === "todas" ||
+      (status === "pendentes" && !t.concluida) ||
+      (status === "concluidas" && t.concluida) ||
+      (status === "favoritas" && t.favorita) ||
+      (status === "atrasadas" && ehAtrasada(t));
 
-    if (filtro === "pendentes") combinaFiltro = !tarefa.concluida;
-    if (filtro === "concluidas") combinaFiltro = tarefa.concluida;
-    if (filtro === "favoritas") combinaFiltro = tarefa.favorita;
+    const prioridadeCombina =
+      prioridade === "todas" ||
+      (t.prioridade || "media") === prioridade;
 
-    return combinaTexto && combinaFiltro;
+    return textoCombina && statusCombina && prioridadeCombina;
   });
 
-  const peso = { alta: 0, media: 1, baixa: 2 };
+  /* 5 — ORDENAÇÃO */
 
-  if (ordenacao.value === "prioridade") {
-    resultado.sort((a, b) => peso[a.prioridade] - peso[b.prioridade]);
-  } else if (ordenacao.value === "data") {
-    resultado.sort((a, b) => {
-      if (!a.data && !b.data) return 0;
-      if (!a.data) return 1;
-      if (!b.data) return -1;
-      return a.data.localeCompare(b.data);
-    });
-  } else if (ordenacao.value === "alfabetica") {
-    resultado.sort((a, b) => a.texto.localeCompare(b.texto, "pt-BR"));
-  } else {
-    resultado.sort((a, b) => b.criacao - a.criacao);
+  if (ordem === "recentes") {
+    visiveis.sort((a, b) => b.criadaEm - a.criadaEm);
   }
 
-  return resultado;
-}
+  if (ordem === "antigas") {
+    visiveis.sort((a, b) => a.criadaEm - b.criadaEm);
+  }
 
-// ==========================================
-// EXIBIR TAREFAS
-// ==========================================
+  if (ordem === "alfabetica") {
+    visiveis.sort(
+      (a, b) => a.texto.localeCompare(b.texto, "pt-BR")
+    );
+  }
 
-function renderizarTarefas() {
-  listaTarefas.replaceChildren();
+  if (ordem === "conclusao") {
+    visiveis.sort(
+      (a, b) => Number(b.concluida) - Number(a.concluida)
+    );
+  }
 
-  const visiveis = obterTarefasVisiveis();
-  mensagemVazia.hidden = visiveis.length > 0;
-  mensagemVazia.textContent = tarefas.length === 0
-    ? "Nenhuma tarefa cadastrada."
-    : "Nenhuma tarefa encontrada com esses filtros.";
+  if (ordem === "prazo") {
+    visiveis.sort(
+      (a, b) => (a.prazo || "9999-99-99")
+        .localeCompare(b.prazo || "9999-99-99")
+    );
+  }
+
+  if (ordem === "prioridade") {
+    visiveis.sort(
+      (a, b) =>
+        prioridadesNumero(b.prioridade) -
+        prioridadesNumero(a.prioridade)
+    );
+  }
 
   visiveis.forEach(tarefa => {
     const item = document.createElement("li");
-    item.className = "item-tarefa";
-    if (tarefa.concluida) item.classList.add("concluida");
+    item.className = "tarefa";
+
+    if (tarefa.concluida) {
+      item.classList.add("tarefa-concluida");
+    }
 
     const checkbox = document.createElement("input");
+
     checkbox.type = "checkbox";
-    checkbox.className = "check-tarefa";
+    checkbox.className = "checkbox-tarefa";
     checkbox.checked = tarefa.concluida;
-    checkbox.setAttribute("aria-label", "Concluir tarefa");
+    checkbox.setAttribute("aria-label", "Marcar como concluída");
 
     checkbox.addEventListener("change", () => {
-      const anterior = {
-        concluida: tarefa.concluida,
-        concluidaEm: tarefa.concluidaEm
-      };
-
-      tarefa.concluida = checkbox.checked;
-      tarefa.concluidaEm = tarefa.concluida ? Date.now() : null;
-
-      if (!salvarTarefas()) {
-        tarefa.concluida = anterior.concluida;
-        tarefa.concluidaEm = anterior.concluidaEm;
-        return;
-      }
-
-      atualizarTudo();
+      alternarConclusao(tarefa.id);
     });
 
     const conteudo = document.createElement("div");
     conteudo.className = "conteudo-tarefa";
 
-    const texto = document.createElement("div");
+    const texto = document.createElement("span");
     texto.className = "texto-tarefa";
     texto.textContent = tarefa.texto;
 
-    const detalhes = document.createElement("div");
-    detalhes.className = "detalhes-tarefa";
+    conteudo.appendChild(texto);
 
-    const prioridade = document.createElement("span");
-    prioridade.className = "etiqueta prioridade-" + tarefa.prioridade;
-    prioridade.textContent = "Prioridade: " + {
-      alta: "Alta", media: "Média", baixa: "Baixa"
-    }[tarefa.prioridade];
+    const meta = document.createElement("div");
+    meta.className = "meta-tarefa";
 
-    detalhes.appendChild(prioridade);
+    const prio = tarefa.prioridade || "media";
 
-    if (tarefa.data) {
-      const prazo = document.createElement("span");
-      prazo.className = "etiqueta";
-      prazo.textContent = "Prazo: " + formatarData(tarefa.data);
+    meta.appendChild(
+      criarEtiqueta(`Prioridade ${prio}`, prio)
+    );
 
-      if (!tarefa.concluida && tarefa.data < hojeISO()) {
-        prazo.classList.add("prazo-atrasado");
-        prazo.textContent = "Atrasada: " + formatarData(tarefa.data);
-      }
-
-      detalhes.appendChild(prazo);
+    if (tarefa.prazo) {
+      meta.appendChild(
+        criarEtiqueta(`Entrega: ${dataParaTexto(tarefa.prazo)}`)
+      );
     }
 
-    conteudo.append(texto, detalhes);
+    if (ehAtrasada(tarefa)) {
+      meta.appendChild(
+        criarEtiqueta("Atrasada", "atrasada")
+      );
+    }
+
+    if (tarefa.subtarefas?.length) {
+      const feitas = tarefa.subtarefas.filter(
+        s => s.concluida
+      ).length;
+
+      meta.appendChild(
+        criarEtiqueta(
+          `${feitas}/${tarefa.subtarefas.length} subtarefas`
+        )
+      );
+    }
+
+    conteudo.appendChild(meta);
+
+    /* Lista de subtarefas */
+
+    if (tarefa.subtarefas?.length) {
+      const subs = document.createElement("div");
+      subs.className = "subtarefas";
+
+      tarefa.subtarefas.forEach(sub => {
+        const linha = document.createElement("label");
+
+        linha.className =
+          `subtarefa${sub.concluida ? " concluida" : ""}`;
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = Boolean(sub.concluida);
+
+        cb.addEventListener("change", () => {
+          alternarSubtarefa(
+            tarefa.id,
+            sub.id,
+            cb.checked
+          );
+        });
+
+        const st = document.createElement("span");
+        st.textContent = sub.texto;
+
+        linha.append(cb, st);
+        subs.appendChild(linha);
+      });
+
+      conteudo.appendChild(subs);
+    }
+
+    /* Ações da tarefa */
 
     const acoes = document.createElement("div");
     acoes.className = "acoes-tarefa";
 
-    acoes.appendChild(criarBotao(
-      tarefa.favorita ? "fa-solid fa-star" : "fa-regular fa-star",
-      tarefa.favorita ? "Remover favorita" : "Favoritar",
-      tarefa.favorita ? "favorito-ativo" : "",
-      () => {
-        tarefa.favorita = !tarefa.favorita;
-        if (salvarTarefas()) atualizarTudo();
-      }
-    ));
+    acoes.append(
+      criarBotao(
+        tarefa.favorita
+          ? "fa-solid fa-star"
+          : "fa-regular fa-star",
+        "botao-favorito" + (tarefa.favorita ? " ativo" : ""),
+        tarefa.favorita
+          ? "Remover favorita"
+          : "Adicionar favorita",
+        () => alternarFavorita(tarefa.id)
+      ),
 
-    acoes.appendChild(criarBotao(
-      "fa-solid fa-pen",
-      "Editar tarefa",
-      "",
-      () => {
-        const novoTexto = prompt("Edite a tarefa:", tarefa.texto);
-        if (novoTexto === null) return;
+      criarBotao(
+        "fa-regular fa-copy",
+        "botao-duplicar",
+        "Duplicar tarefa",
+        () => duplicarTarefa(tarefa.id)
+      ),
 
-        if (!novoTexto.trim()) {
-          alert("O nome não pode ficar vazio.");
-          return;
-        }
+      criarBotao(
+        "fa-regular fa-pen-to-square",
+        "botao-editar",
+        "Editar",
+        () => editarTarefa(tarefa.id)
+      ),
 
-        const anterior = tarefa.texto;
-        tarefa.texto = novoTexto.trim();
-
-        if (!salvarTarefas()) {
-          tarefa.texto = anterior;
-          return;
-        }
-
-        atualizarTudo();
-      }
-    ));
-
-    acoes.appendChild(criarBotao(
-      "fa-regular fa-copy",
-      "Duplicar tarefa",
-      "",
-      () => {
-        const copia = {
-          ...tarefa,
-          id: gerarId(),
-          texto: tarefa.texto + " (cópia)",
-          concluida: false,
-          concluidaEm: null,
-          criacao: Date.now()
-        };
-
-        tarefas.unshift(copia);
-
-        if (!salvarTarefas()) {
-          tarefas = tarefas.filter(t => t.id !== copia.id);
-          return;
-        }
-
-        atualizarTudo();
-      }
-    ));
-
-    acoes.appendChild(criarBotao(
-      "fa-solid fa-trash-can",
-      "Mover para lixeira",
-      "excluir",
-      () => moverParaLixeira(tarefa.id)
-    ));
+      criarBotao(
+        "fa-regular fa-trash-can",
+        "botao-excluir",
+        "Mover para lixeira",
+        () => moverParaLixeira(tarefa.id)
+      )
+    );
 
     item.append(checkbox, conteudo, acoes);
     listaTarefas.appendChild(item);
   });
+
+  $("mensagem-vazia").classList.toggle(
+    "escondido",
+    visiveis.length > 0
+  );
+
+  atualizarResumo();
+  atualizarConquistas();
 }
 
-// ==========================================
-// ESTATÍSTICAS GERAIS
-// ==========================================
-
-function renderizarProgresso() {
-  const total = tarefas.length;
-  const concluidas = tarefas.filter(t => t.concluida).length;
-  const pendentes = total - concluidas;
-  const percentual = total ? Math.round(concluidas / total * 100) : 0;
-
-  totalTarefas.textContent = total;
-  totalPendentes.textContent = pendentes;
-  totalConcluidas.textContent = concluidas;
-  porcentagem.textContent = percentual + "%";
-  barraPreenchida.style.width = percentual + "%";
-  textoProgresso.textContent = total
-    ? `${concluidas} de ${total} tarefas concluídas`
-    : "Vamos começar!";
-}
-
-// ==========================================
-// LIXEIRA
-// ==========================================
-
-function moverParaLixeira(id) {
-  const indice = tarefas.findIndex(t => t.id === id);
-  if (indice < 0) return;
-
-  const tarefa = tarefas[indice];
-  tarefas.splice(indice, 1);
-  lixeira.unshift(tarefa);
-
-  if (!salvarTarefas() || !salvarLixeira()) {
-    lixeira = lixeira.filter(t => t.id !== tarefa.id);
-    tarefas.splice(indice, 0, tarefa);
-    salvarTarefas();
-    salvarLixeira();
-    return;
-  }
-
-  atualizarTudo();
-}
-
-function renderizarLixeira() {
-  listaLixeira.replaceChildren();
-  lixeiraVazia.hidden = lixeira.length > 0;
-
-  lixeira.forEach(tarefa => {
-    const item = document.createElement("li");
-    item.className = "item-tarefa";
-
-    const conteudo = document.createElement("div");
-    conteudo.className = "conteudo-tarefa";
-
-    const texto = document.createElement("div");
-    texto.className = "texto-tarefa";
-    texto.textContent = tarefa.texto;
-    conteudo.appendChild(texto);
-
-    const acoes = document.createElement("div");
-    acoes.className = "acoes-tarefa";
-
-    acoes.appendChild(criarBotao(
-      "fa-solid fa-rotate-left",
-      "Restaurar",
-      "",
-      () => {
-        const antigaTarefas = [...tarefas];
-        const antigaLixeira = [...lixeira];
-
-        lixeira = lixeira.filter(t => t.id !== tarefa.id);
-        tarefas.unshift(tarefa);
-
-        if (!salvarTarefas() || !salvarLixeira()) {
-          tarefas = antigaTarefas;
-          lixeira = antigaLixeira;
-          salvarTarefas();
-          salvarLixeira();
-          return;
-        }
-
-        atualizarTudo();
-      }
-    ));
-
-    acoes.appendChild(criarBotao(
-      "fa-solid fa-trash-can",
-      "Excluir permanentemente",
-      "excluir",
-      () => {
-        if (!confirm("Excluir esta tarefa permanentemente?")) return;
-
-        const anterior = [...lixeira];
-        lixeira = lixeira.filter(t => t.id !== tarefa.id);
-
-        if (!salvarLixeira()) {
-          lixeira = anterior;
-          return;
-        }
-
-        renderizarLixeira();
-      }
-    ));
-
-    item.append(conteudo, acoes);
-    listaLixeira.appendChild(item);
+[campoPesquisa, filtroStatus, filtroOrdem, filtroPrioridade]
+  .forEach(el => {
+    el.addEventListener(
+      el.tagName === "INPUT" ? "input" : "change",
+      renderizarTarefas
+    );
   });
+
+/* 7 E 17 — ESTATÍSTICAS, PROGRESSO E META DIÁRIA */
+
+function atualizarResumo() {
+  const ativas = tarefasAtivas();
+
+  const concluidas = ativas.filter(t => t.concluida).length;
+  const pendentes = ativas.length - concluidas;
+
+  $("contador-tarefas").textContent = ativas.length;
+  $("contador-concluidas").textContent = concluidas;
+  $("contador-pendentes").textContent = pendentes;
+
+  const porcentagem = ativas.length
+    ? Math.round(concluidas / ativas.length * 100)
+    : 0;
+
+  $("porcentagem-progresso").textContent = `${porcentagem}%`;
+
+  $("progresso-preenchido").style.width =
+    `${porcentagem}%`;
+
+  $("mensagem-progresso").textContent =
+    !ativas.length
+      ? "Toda conquista começa com o primeiro passo."
+      : porcentagem === 100
+        ? "Parabéns! Você concluiu todas as tarefas! ✨"
+        : "Continue assim. Você está avançando!";
+
+  const meta = Math.max(
+    1,
+    Number($("campo-meta").value) || 3
+  );
+
+  const hoje = dataLocalISO();
+
+  const concluidasHoje = historico.filter(h =>
+    dataLocalISO(new Date(h.data)) === hoje
+  ).length;
+
+  $("texto-meta").textContent =
+    `${Math.min(concluidasHoje, meta)} de ${meta} concluídas hoje`;
+
+  $("progresso-meta").style.width =
+    `${Math.min(100, concluidasHoje / meta * 100)}%`;
 }
 
-botaoLixeira.addEventListener("click", () => {
-  secaoLixeira.hidden = false;
-  renderizarLixeira();
-  secaoLixeira.scrollIntoView({ behavior: "smooth", block: "start" });
+$("campo-meta").addEventListener("change", () => {
+  const valor = Math.max(
+    1,
+    Math.min(100, Number($("campo-meta").value) || 3)
+  );
+
+  $("campo-meta").value = valor;
+
+  localStorage.setItem("senai_meta_diaria", String(valor));
+
+  atualizarResumo();
 });
 
-fecharLixeira.addEventListener("click", () => {
-  secaoLixeira.hidden = true;
-});
+const metaSalva = Number(
+  localStorage.getItem("senai_meta_diaria")
+);
 
-esvaziarLixeira.addEventListener("click", () => {
-  if (!lixeira.length) return;
-  if (!confirm("Esvaziar a lixeira permanentemente?")) return;
+if (metaSalva > 0) {
+  $("campo-meta").value = metaSalva;
+}
 
-  const anterior = [...lixeira];
-  lixeira = [];
+/* 19 — SISTEMA DE CONQUISTAS */
 
-  if (!salvarLixeira()) {
-    lixeira = anterior;
+function atualizarConquistas() {
+  const quantidade = historico.length;
+
+  definirConquista("conquista-primeira", quantidade >= 1);
+  definirConquista("conquista-cinco", quantidade >= 5);
+  definirConquista("conquista-dez", quantidade >= 10);
+}
+
+function definirConquista(id, desbloqueada) {
+  const elemento = $(id);
+
+  elemento.classList.toggle(
+    "desbloqueada",
+    desbloqueada
+  );
+
+  elemento.querySelector(".status-conquista").textContent =
+    desbloqueada ? "Desbloqueada!" : "Bloqueada";
+}
+
+/* 11 — EXPORTAR TAREFAS PARA CSV */
+
+function exportarTarefas() {
+  const ativas = tarefasAtivas();
+
+  if (!ativas.length) {
+    mostrarNotificacao("Não há tarefas para exportar.");
     return;
   }
 
-  renderizarLixeira();
-});
+  const escapar = valor =>
+    `"${String(valor ?? "").replace(/"/g, '""')}"`;
 
-botaoLimpar.addEventListener("click", () => {
-  if (!tarefas.length) {
-    alert("Sua lista já está vazia.");
-    return;
-  }
+  const linhas = [[
+    "Tarefa",
+    "Status",
+    "Favorita",
+    "Prioridade",
+    "Data de entrega",
+    "Subtarefas",
+    "Criada em"
+  ]];
 
-  if (!confirm("Mover todas as tarefas para a lixeira?")) return;
-
-  const antigasTarefas = [...tarefas];
-  const antigaLixeira = [...lixeira];
-
-  lixeira = [...tarefas, ...lixeira];
-  tarefas = [];
-
-  if (!salvarTarefas() || !salvarLixeira()) {
-    tarefas = antigasTarefas;
-    lixeira = antigaLixeira;
-    salvarTarefas();
-    salvarLixeira();
-    return;
-  }
-
-  atualizarTudo();
-});
-
-// ==========================================
-// EXPORTAR CSV
-// ==========================================
-
-botaoExportar.addEventListener("click", () => {
-  if (!tarefas.length) {
-    alert("Não há tarefas para exportar.");
-    return;
-  }
-
-  const escapar = valor => '"' + String(valor ?? "").replace(/"/g, '""') + '"';
-
-  const linhas = [
-    ["Tarefa", "Status", "Prioridade", "Prazo", "Favorita"],
-    ...tarefas.map(t => [
+  ativas.forEach(t => {
+    linhas.push([
       t.texto,
       t.concluida ? "Concluída" : "Pendente",
-      t.prioridade,
-      t.data ? formatarData(t.data) : "",
-      t.favorita ? "Sim" : "Não"
-    ])
-  ];
+      t.favorita ? "Sim" : "Não",
+      t.prioridade || "media",
+      t.prazo ? dataParaTexto(t.prazo) : "",
+      (t.subtarefas || [])
+        .map(s => `${s.concluida ? "[x]" : "[ ]"} ${s.texto}`)
+        .join(" | "),
+      new Date(t.criadaEm).toLocaleString("pt-BR")
+    ]);
+  });
 
-  const csv = "\uFEFF" + linhas
-    .map(linha => linha.map(escapar).join(";"))
-    .join("\r\n");
+  const csv = "\uFEFF" +
+    linhas.map(l => l.map(escapar).join(";")).join("\r\n");
 
-  const arquivo = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const arquivo = new Blob([csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+
   const url = URL.createObjectURL(arquivo);
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = "minhas-tarefas.csv";
+  link.download = "minhas-tarefas-senai.csv";
+
+  document.body.appendChild(link);
   link.click();
+  link.remove();
 
   URL.revokeObjectURL(url);
-});
 
-// ==========================================
-// TEMA CLARO E ESCURO
-// ==========================================
-
-function aplicarTema(tema) {
-  const escuro = tema === "escuro";
-  document.body.classList.toggle("modo-escuro", escuro);
-
-  botaoTema.innerHTML = escuro
-    ? '<i class="fa-solid fa-sun"></i>'
-    : '<i class="fa-solid fa-moon"></i>';
-
-  botaoTema.title = escuro ? "Tema claro" : "Tema escuro";
+  mostrarNotificacao("Arquivo CSV exportado com sucesso.");
 }
 
-aplicarTema(ler(CHAVE_TEMA, "claro"));
+/* 12 — LIXEIRA E RESTAURAÇÃO */
 
-botaoTema.addEventListener("click", () => {
-  const novoTema = document.body.classList.contains("modo-escuro")
-    ? "claro" : "escuro";
+function moverParaLixeira(id) {
+  const tarefa = tarefas.find(t => t.id === id);
 
-  aplicarTema(novoTema);
-  gravar(CHAVE_TEMA, novoTema);
-});
+  if (!tarefa) return;
 
-// ==========================================
-// JANELA DE INFORMAÇÕES
-// ==========================================
+  if (!confirm(`Mover "${tarefa.texto}" para a lixeira?`)) {
+    return;
+  }
 
-function fecharJanelaInfo() {
-  modalInfo.hidden = true;
-  botaoInfo.focus();
+  tarefa.excluida = true;
+
+  if (idEmEdicao === id) {
+    cancelarEdicao();
+  }
+
+  salvarTarefas();
+  renderizarTarefas();
+  renderizarLixeira();
+  atualizarResumo();
+
+  mostrarNotificacao(
+    "Tarefa movida para a lixeira. Você pode restaurá-la."
+  );
 }
 
-botaoInfo.addEventListener("click", () => {
-  modalInfo.hidden = false;
-  fecharModal.focus();
+function renderizarLixeira() {
+  const ul = $("lista-lixeira");
+  ul.innerHTML = "";
+
+  const apagadas = tarefas.filter(t => t.excluida);
+
+  apagadas.forEach(t => {
+    const li = document.createElement("li");
+    li.className = "item-lixeira";
+
+    const info = document.createElement("div");
+    info.className = "info-lixeira";
+
+    const nome = document.createElement("strong");
+    nome.textContent = t.texto;
+
+    const detalhe = document.createElement("span");
+    detalhe.className = "texto-suave";
+
+    detalhe.textContent =
+      `Prioridade: ${t.prioridade || "média"}` +
+      (t.prazo
+        ? " · Entrega: " + dataParaTexto(t.prazo)
+        : "");
+
+    info.append(nome, detalhe);
+
+    const acoes = document.createElement("div");
+    acoes.className = "acoes-lixeira";
+
+    acoes.append(
+      criarBotao(
+        "fa-solid fa-rotate-left",
+        "botao-restaurar",
+        "Restaurar tarefa",
+        () => {
+          t.excluida = false;
+
+          salvarTarefas();
+          renderizarTarefas();
+          renderizarLixeira();
+
+          mostrarNotificacao("Tarefa restaurada.");
+        }
+      ),
+
+      criarBotao(
+        "fa-regular fa-trash-can",
+        "botao-excluir-permanente",
+        "Excluir permanentemente",
+        () => {
+          if (!confirm(
+            `Excluir "${t.texto}" permanentemente?`
+          )) {
+            return;
+          }
+
+          tarefas = tarefas.filter(x => x.id !== t.id);
+
+          historico = historico.filter(
+            h => h.tarefaId !== t.id
+          );
+
+          salvarTarefas();
+          renderizarTarefas();
+          renderizarLixeira();
+
+          mostrarNotificacao(
+            "Tarefa excluída permanentemente."
+          );
+        }
+      )
+    );
+
+    li.append(info, acoes);
+    ul.appendChild(li);
+  });
+
+  $("lixeira-vazia").classList.toggle(
+    "escondido",
+    apagadas.length > 0
+  );
+
+  $("botao-esvaziar-lixeira").classList.toggle(
+    "escondido",
+    apagadas.length === 0
+  );
+}
+
+function abrirLixeira() {
+  mostrarLixeira = true;
+
+  $("secao-lixeira").classList.remove("escondido");
+
+  $("secao-lista").scrollIntoView({
+    behavior: "smooth"
+  });
+
+  renderizarTarefas();
+}
+
+function sairLixeira() {
+  mostrarLixeira = false;
+  renderizarTarefas();
+}
+
+$("botao-sair-lixeira").addEventListener(
+  "click",
+  sairLixeira
+);
+
+$("botao-esvaziar-lixeira").addEventListener("click", () => {
+  const apagadas = tarefas.filter(t => t.excluida);
+
+  if (!apagadas.length) return;
+
+  if (!confirm(
+    "Excluir permanentemente todas as tarefas da lixeira?"
+  )) {
+    return;
+  }
+
+  const ids = new Set(apagadas.map(t => t.id));
+
+  tarefas = tarefas.filter(t => !t.excluida);
+
+  historico = historico.filter(
+    h => !ids.has(h.tarefaId)
+  );
+
+  salvarTarefas();
+  renderizarTarefas();
+  renderizarLixeira();
+
+  mostrarNotificacao("Lixeira esvaziada.");
 });
 
-fecharModal.addEventListener("click", fecharJanelaInfo);
-entendiModal.addEventListener("click", fecharJanelaInfo);
+$("botao-limpar").addEventListener("click", () => {
+  const ativas = tarefasAtivas();
 
-modalInfo.addEventListener("click", evento => {
-  if (evento.target === modalInfo) fecharJanelaInfo();
+  if (!ativas.length) {
+    mostrarNotificacao(
+      "Não há tarefas para mover à lixeira."
+    );
+    return;
+  }
+
+  if (!confirm(
+    "Mover todas as tarefas ativas para a lixeira?"
+  )) {
+    return;
+  }
+
+  tarefas.forEach(t => {
+    if (!t.excluida) t.excluida = true;
+  });
+
+  salvarTarefas();
+  renderizarTarefas();
+  renderizarLixeira();
+
+  mostrarNotificacao(
+    "Tarefas movidas para a lixeira."
+  );
 });
 
-document.addEventListener("keydown", evento => {
-  if (evento.key === "Escape" && !modalInfo.hidden) fecharJanelaInfo();
-});
+/* 13 E 18 — LEMBRETES E TAREFAS ATRASADAS */
 
-// ==========================================
-// FUNÇÃO 16: CALENDÁRIO DE TAREFAS
-// ==========================================
+function verificarAtrasadas() {
+  const atrasadas = tarefasAtivas().filter(ehAtrasada);
 
-const dataCalendario = $("data-calendario");
-const resumoCalendario = $("resumo-calendario");
-const listaCalendario = $("lista-calendario");
-const calendarioVazio = $("calendario-vazio");
+  if (atrasadas.length) {
+    $("notificacao").classList.remove("escondido");
 
-dataCalendario.value = hojeISO();
+    $("notificacao").textContent =
+      `Você tem ${atrasadas.length} tarefa(s) atrasada(s). Confira os prazos na lista.`;
+  }
+
+  const hoje = dataLocalISO();
+
+  tarefasAtivas()
+    .filter(t =>
+      !t.concluida &&
+      t.prazo === hoje &&
+      !idsAvisados.has(t.id)
+    )
+    .forEach(t => {
+      idsAvisados.add(t.id);
+
+      mostrarNotificacao(
+        `Lembrete: "${t.texto}" vence hoje.`
+      );
+
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        new Notification("Lembrete de tarefa", {
+          body: `"${t.texto}" vence hoje.`
+        });
+      }
+    });
+}
+
+async function ativarLembretes() {
+  if (!("Notification" in window)) {
+    mostrarNotificacao(
+      "Este navegador não oferece notificações. Os avisos dentro do painel continuam funcionando."
+    );
+    return;
+  }
+
+  try {
+    const permissao = await Notification.requestPermission();
+
+    if (permissao === "granted") {
+      mostrarNotificacao(
+        "Lembretes ativados! Os avisos são verificados enquanto o painel estiver aberto."
+      );
+
+      verificarAtrasadas();
+    } else {
+      mostrarNotificacao(
+        "Permissão de notificação não concedida. Os avisos aparecerão dentro do painel."
+      );
+    }
+  } catch {
+    mostrarNotificacao(
+      "Não foi possível ativar notificações neste navegador."
+    );
+  }
+}
+
+setInterval(verificarAtrasadas, 60000);
+
+/* 14 — HISTÓRICO DE CONCLUSÃO */
+
+function atualizarHistorico() {
+  const ul = $("lista-historico");
+
+  ul.innerHTML = "";
+
+  historico.slice(0, 20).forEach(h => {
+    const li = document.createElement("li");
+    li.className = "item-historico";
+
+    const info = document.createElement("div");
+    info.className = "info-historico";
+
+    const nome = document.createElement("strong");
+    nome.textContent = h.texto;
+
+    const data = document.createElement("span");
+    data.className = "texto-suave";
+    data.textContent = new Date(h.data).toLocaleString("pt-BR");
+
+    info.append(nome, data);
+    li.append(info);
+    ul.appendChild(li);
+  });
+
+  $("historico-vazio").classList.toggle(
+    "escondido",
+    historico.length > 0
+  );
+}
+
+/* 15 — CALENDÁRIO DE TAREFAS */
 
 function renderizarCalendario() {
-  listaCalendario.replaceChildren();
+  const data = $("campo-data-calendario").value || dataLocalISO();
 
-  const dataSelecionada = dataCalendario.value;
-  const doDia = tarefas.filter(t => t.data === dataSelecionada);
+  const ul = $("lista-calendario");
+  ul.innerHTML = "";
 
-  resumoCalendario.textContent = dataSelecionada
-    ? `${formatarData(dataSelecionada)} · ${doDia.length} tarefa(s)`
-    : "Selecione uma data.";
+  const doDia = tarefasAtivas().filter(
+    t => t.prazo === data
+  );
 
-  calendarioVazio.hidden = doDia.length > 0;
-  calendarioVazio.textContent = dataSelecionada
-    ? "Nenhuma tarefa com prazo nessa data."
-    : "Selecione uma data para consultar as tarefas.";
+  if (!doDia.length) {
+    const p = document.createElement("p");
 
-  doDia.forEach(tarefa => {
-    const item = document.createElement("li");
-    item.className = "item-tarefa";
-    if (tarefa.concluida) item.classList.add("concluida");
+    p.className = "texto-suave";
+    p.textContent =
+      "Nenhuma tarefa com prazo para esta data.";
 
-    const texto = document.createElement("div");
-    texto.className = "conteudo-tarefa";
+    ul.appendChild(p);
+    return;
+  }
 
-    const nome = document.createElement("div");
-    nome.className = "texto-tarefa";
-    nome.textContent = tarefa.texto;
+  doDia.forEach(t => {
+    const item = document.createElement("div");
+    item.className = "item-calendario";
+
+    const nome = document.createElement("strong");
+    nome.textContent = t.texto;
 
     const status = document.createElement("span");
-    status.className = "etiqueta";
-    status.textContent = tarefa.concluida ? "Concluída" : "Pendente";
 
-    texto.append(nome, status);
-    item.appendChild(texto);
+    status.textContent =
+      `${t.concluida ? "Concluída" : "Pendente"}` +
+      ` · Prioridade ${t.prioridade || "média"}` +
+      `${ehAtrasada(t) ? " · Atrasada" : ""}`;
 
-    item.appendChild(criarBotao(
-      tarefa.concluida ? "fa-solid fa-rotate-left" : "fa-solid fa-check",
-      tarefa.concluida ? "Reabrir tarefa" : "Concluir tarefa",
-      "",
-      () => {
-        const anterior = {
-          concluida: tarefa.concluida,
-          concluidaEm: tarefa.concluidaEm
-        };
-
-        tarefa.concluida = !tarefa.concluida;
-        tarefa.concluidaEm = tarefa.concluida ? Date.now() : null;
-
-        if (!salvarTarefas()) {
-          tarefa.concluida = anterior.concluida;
-          tarefa.concluidaEm = anterior.concluidaEm;
-          return;
-        }
-
-        atualizarTudo();
-      }
-    ));
-
-    listaCalendario.appendChild(item);
+    item.append(nome, status);
+    ul.appendChild(item);
   });
 }
 
-dataCalendario.addEventListener("change", renderizarCalendario);
+$("campo-data-calendario").value = dataLocalISO();
 
-// ==========================================
-// FUNÇÃO 17: CRONÔMETRO POMODORO
-// ==========================================
+$("campo-data-calendario").addEventListener(
+  "change",
+  renderizarCalendario
+);
 
-const relogioPomodoro = $("relogio-pomodoro");
-const rotuloPomodoro = $("rotulo-pomodoro");
-const iniciarPomodoro = $("iniciar-pomodoro");
-const reiniciarPomodoro = $("reiniciar-pomodoro");
-const botoesModo = document.querySelectorAll(".modo-pomodoro");
+/* 20 — TEMA CLARO E ESCURO */
 
-let duracaoPomodoro = 25 * 60;
-let segundosRestantes = duracaoPomodoro;
-let temporizadorPomodoro = null;
-let fimPomodoro = null;
-let modoPomodoro = "foco";
+const botaoTema = $("botao-alternar-tema");
 
-function mostrarRelogio() {
+function atualizarIconeTema() {
+  const escuro =
+    document.body.classList.contains("modo-escuro");
+
+  botaoTema.innerHTML = escuro
+    ? '<i class="fa-regular fa-sun"></i>'
+    : '<i class="fa-regular fa-moon"></i>';
+
+  botaoTema.setAttribute(
+    "aria-label",
+    escuro ? "Ativar tema claro" : "Ativar tema escuro"
+  );
+}
+
+function alternarTema() {
+  document.body.classList.toggle("modo-escuro");
+
+  localStorage.setItem(
+    "senai_tema_escuro",
+    document.body.classList.contains("modo-escuro")
+      ? "sim"
+      : "nao"
+  );
+
+  atualizarIconeTema();
+}
+
+if (localStorage.getItem("senai_tema_escuro") === "sim") {
+  document.body.classList.add("modo-escuro");
+}
+
+atualizarIconeTema();
+
+botaoTema.addEventListener("click", alternarTema);
+
+/* MENU DAS 20 FUNÇÕES */
+
+function fecharMenu() {
+  listaFuncoes.classList.add("escondido");
+
+  botaoFuncoes.classList.remove("aberto");
+
+  botaoFuncoes.setAttribute("aria-expanded", "false");
+}
+
+botaoFuncoes.addEventListener("click", () => {
+  const abrir = listaFuncoes.classList.contains("escondido");
+
+  listaFuncoes.classList.toggle("escondido", !abrir);
+  botaoFuncoes.classList.toggle("aberto", abrir);
+
+  botaoFuncoes.setAttribute(
+    "aria-expanded",
+    String(abrir)
+  );
+});
+
+function irPara(id) {
+  $(id).scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+listaFuncoes.querySelectorAll("[data-acao]").forEach(botao => {
+  botao.addEventListener("click", () => {
+    fecharMenu();
+
+    switch (botao.dataset.acao) {
+      case "pesquisar":
+        irPara("secao-lista");
+        campoPesquisa.focus();
+        break;
+
+      case "filtrar":
+        irPara("secao-lista");
+        filtroStatus.focus();
+        break;
+
+      case "prioridades":
+        irPara("secao-lista");
+        filtroPrioridade.focus();
+        mostrarNotificacao(
+          "Defina a prioridade ao criar ou editar uma tarefa."
+        );
+        break;
+
+      case "prazos":
+        irPara("secao-formulario");
+        $("campo-prazo").focus();
+        mostrarNotificacao(
+          "Escolha uma data de entrega para sua tarefa."
+        );
+        break;
+
+      case "ordenar":
+        irPara("secao-lista");
+        filtroOrdem.focus();
+        break;
+
+      case "salvar":
+        salvarTarefas();
+        mostrarNotificacao(
+          "Salvamento automático ativo: as alterações são guardadas neste navegador."
+        );
+        break;
+
+      case "progresso":
+        irPara("secao-estatisticas");
+        break;
+
+      case "subtarefas":
+        irPara("secao-formulario");
+        $("campo-subtarefas").focus();
+        mostrarNotificacao(
+          "Digite subtarefas separadas por vírgulas."
+        );
+        break;
+
+      case "favoritas":
+        filtroStatus.value = "favoritas";
+        renderizarTarefas();
+        irPara("secao-lista");
+        break;
+
+      case "duplicar":
+        irPara("secao-lista");
+        mostrarNotificacao(
+          "Use o ícone de cópia ao lado de uma tarefa para duplicá-la."
+        );
+        break;
+
+      case "exportar":
+        exportarTarefas();
+        break;
+
+      case "lixeira":
+        abrirLixeira();
+        break;
+
+      case "lembretes":
+        ativarLembretes();
+        break;
+
+      case "historico":
+        irPara("secao-historico");
+        break;
+
+      case "calendario":
+        irPara("secao-calendario");
+        break;
+
+      case "pomodoro":
+        irPara("secao-pomodoro");
+        break;
+
+      case "meta":
+        irPara("secao-progresso");
+        $("campo-meta").focus();
+        break;
+
+      case "atrasadas":
+        filtroStatus.value = "atrasadas";
+        renderizarTarefas();
+        irPara("secao-lista");
+        verificarAtrasadas();
+        break;
+
+      case "conquistas":
+        irPara("secao-conquistas");
+        break;
+
+      case "tema":
+        alternarTema();
+        break;
+    }
+  });
+});
+
+document.addEventListener("click", evento => {
+  if (!evento.target.closest(".menu-container")) {
+    fecharMenu();
+  }
+});
+
+/* 16 — CRONÔMETRO POMODORO */
+
+function atualizarTemporizador() {
   const minutos = Math.floor(segundosRestantes / 60);
   const segundos = segundosRestantes % 60;
 
-  relogioPomodoro.textContent =
-    String(minutos).padStart(2, "0") + ":" +
-    String(segundos).padStart(2, "0");
+  $("temporizador").textContent =
+    `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
 }
 
-function pararPomodoro() {
-  if (temporizadorPomodoro !== null) {
-    clearInterval(temporizadorPomodoro);
-    temporizadorPomodoro = null;
-  }
-  fimPomodoro = null;
-  iniciarPomodoro.innerHTML = '<i class="fa-solid fa-play"></i> Iniciar';
-}
+$("botao-iniciar-pomodoro").addEventListener("click", () => {
+  if (intervaloPomodoro !== null) return;
 
-function selecionarModoPomodoro(botao) {
-  pararPomodoro();
+  mostrarNotificacao("Cronômetro iniciado. Bom estudo!");
 
-  modoPomodoro = botao.dataset.modo;
-  duracaoPomodoro = Number(botao.dataset.minutos) * 60;
-  segundosRestantes = duracaoPomodoro;
-
-  botoesModo.forEach(b => b.classList.toggle("ativo", b === botao));
-
-  rotuloPomodoro.textContent = modoPomodoro === "foco"
-    ? "Hora de focar!" : "Hora de descansar!";
-
-  mostrarRelogio();
-}
-
-botoesModo.forEach(botao => {
-  botao.addEventListener("click", () => selecionarModoPomodoro(botao));
-});
-
-iniciarPomodoro.addEventListener("click", () => {
-  if (temporizadorPomodoro !== null) {
-    pararPomodoro();
-    return;
-  }
-
-  if (segundosRestantes <= 0) {
-    segundosRestantes = duracaoPomodoro;
-  }
-
-  fimPomodoro = Date.now() + segundosRestantes * 1000;
-  iniciarPomodoro.innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
-
-  temporizadorPomodoro = setInterval(() => {
-    segundosRestantes = Math.max(
-      0,
-      Math.ceil((fimPomodoro - Date.now()) / 1000)
-    );
-
-    mostrarRelogio();
+  intervaloPomodoro = setInterval(() => {
+    segundosRestantes--;
+    atualizarTemporizador();
 
     if (segundosRestantes <= 0) {
-      pararPomodoro();
-      rotuloPomodoro.textContent = "Sessão finalizada!";
-      alert(modoPomodoro === "foco"
-        ? "Parabéns! Você terminou sua sessão de foco. Faça uma pausa!"
-        : "Pausa finalizada! Quando quiser, comece outra sessão de foco.");
+      clearInterval(intervaloPomodoro);
+      intervaloPomodoro = null;
+
+      mostrarNotificacao(
+        "Tempo concluído! Faça uma pausa."
+      );
+
+      alert(
+        "Seu tempo de foco terminou. Hora de fazer uma pausa!"
+      );
     }
-  }, 250);
+  }, 1000);
 });
 
-reiniciarPomodoro.addEventListener("click", () => {
-  pararPomodoro();
-  segundosRestantes = duracaoPomodoro;
-  rotuloPomodoro.textContent = modoPomodoro === "foco"
-    ? "Hora de focar!" : "Hora de descansar!";
-  mostrarRelogio();
-});
+$("botao-pausar-pomodoro").addEventListener("click", () => {
+  if (intervaloPomodoro !== null) {
+    clearInterval(intervaloPomodoro);
+    intervaloPomodoro = null;
 
-// ==========================================
-// FUNÇÃO 18: META DIÁRIA
-// ==========================================
-
-const campoMeta = $("meta-diaria");
-const salvarMeta = $("salvar-meta");
-const textoMeta = $("texto-meta");
-const percentualMeta = $("percentual-meta");
-const barraMeta = $("barra-meta");
-
-campoMeta.value = metaDiaria;
-
-salvarMeta.addEventListener("click", () => {
-  const valor = Number(campoMeta.value);
-
-  if (!Number.isInteger(valor) || valor < 1 || valor > 100) {
-    alert("Escolha uma meta entre 1 e 100 tarefas.");
-    campoMeta.value = metaDiaria;
-    return;
+    mostrarNotificacao("Cronômetro pausado.");
   }
-
-  const anterior = metaDiaria;
-  metaDiaria = valor;
-
-  if (!gravar(CHAVE_META, metaDiaria)) {
-    metaDiaria = anterior;
-    campoMeta.value = anterior;
-    return;
-  }
-
-  renderizarMeta();
 });
 
-function renderizarMeta() {
-  const hoje = hojeISO();
+$("botao-reiniciar-pomodoro").addEventListener("click", () => {
+  clearInterval(intervaloPomodoro);
 
-  const concluidasHoje = tarefas.filter(t => {
-    if (!t.concluida || !t.concluidaEm) return false;
-    return new Date(t.concluidaEm).toLocaleDateString("en-CA") === hoje;
-  }).length;
+  intervaloPomodoro = null;
+  segundosRestantes = 25 * 60;
 
-  const percentual = Math.min(
-    100,
-    Math.round(concluidasHoje / metaDiaria * 100)
-  );
+  atualizarTemporizador();
 
-  textoMeta.textContent =
-    `${concluidasHoje} de ${metaDiaria} tarefas concluídas hoje`;
-  percentualMeta.textContent = percentual + "%";
-  barraMeta.style.width = percentual + "%";
-}
+  mostrarNotificacao("Cronômetro reiniciado.");
+});
 
-// ==========================================
-// ATUALIZAÇÃO GERAL
-// ==========================================
+/* INICIALIZAÇÃO */
 
-function atualizarTudo() {
-  renderizarTarefas();
-  renderizarProgresso();
-  renderizarLixeira();
-  renderizarCalendario();
-  renderizarMeta();
-}
-
-// Inicialização
-renderizarRelogio();
-atualizarTudo();
+atualizarTemporizador();
+renderizarTarefas();
+renderizarCalendario();
+atualizarHistorico();
+verificarAtrasadas();

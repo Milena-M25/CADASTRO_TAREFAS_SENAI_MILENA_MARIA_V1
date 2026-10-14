@@ -5,192 +5,271 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meu Painel de Tarefas - SENAI</title>
-  <link rel="stylesheet" href="style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="painel">
     <header class="cabecalho">
-      <div>
-        <span class="marca">SENAI • ORGANIZAÇÃO PESSOAL</span>
-        <h1>Minhas Tarefas <span>✦</span></h1>
-        <p>Organize seu dia, uma tarefa de cada vez.</p>
+      <div class="marca">
+        <div class="marca-icone"><i class="fa-solid fa-feather-pointed"></i></div>
+        <span>SENAI <span class="marca-ponto">.</span></span>
       </div>
-      <div class="topo-acoes">
-        <button class="icone" id="botao-tema" title="Alternar tema" aria-label="Alternar tema">
-          <i class="fa-solid fa-moon"></i>
-        </button>
-        <button class="icone" id="botao-info" title="Informações" aria-label="Informações">
-          <i class="fa-solid fa-circle-info"></i>
-        </button>
-      </div>
+      <button id="botao-alternar-tema" class="icone-botao" title="Alternar tema" aria-label="Alternar tema">
+        <i class="fa-regular fa-moon"></i>
+      </button>
     </header>
 
-    <section class="cartao">
-      <h2><i class="fa-solid fa-chart-line"></i> Meu progresso</h2>
-      <div class="linha-progresso">
-        <span id="texto-progresso">Vamos começar!</span>
-        <strong id="porcentagem">0%</strong>
+    <section class="boas-vindas">
+      <div>
+        <span class="sobretitulo">SEU ESPAÇO DE ORGANIZAÇÃO</span>
+        <h1>
+          <img src="Foto minha.png" alt="Minha foto" class="foto-perfil">
+          Minhas tarefas<span class="destaque">.</span>
+        </h1>
+        <p>Um passo de cada vez. Organize seu dia e celebre suas conquistas.</p>
       </div>
-      <div class="barra"><div id="barra-preenchida"></div></div>
-      <div class="estatisticas">
-        <span>Total: <strong id="total-tarefas">0</strong></span>
-        <span>Pendentes: <strong id="total-pendentes">0</strong></span>
-        <span>Concluídas: <strong id="total-concluidas">0</strong></span>
+      <div class="ilustracao"><i class="fa-solid fa-sparkles"></i></div>
+    </section>
+
+    <!-- MENU COM AS 20 FUNÇÕES -->
+    <section class="menu-container">
+      <button id="botao-funcoes" class="botao-funcoes" aria-expanded="false" aria-controls="lista-funcoes">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Todas as funções</span>
+        <i class="fa-solid fa-chevron-down seta"></i>
+      </button>
+
+      <div id="lista-funcoes" class="lista-funcoes escondido">
+        <button data-acao="pesquisar"><i class="fa-solid fa-magnifying-glass"></i><span>1. Pesquisar tarefas</span></button>
+        <button data-acao="filtrar"><i class="fa-solid fa-sliders"></i><span>2. Filtrar por status</span></button>
+        <button data-acao="prioridades"><i class="fa-solid fa-flag"></i><span>3. Prioridades</span></button>
+        <button data-acao="prazos"><i class="fa-regular fa-calendar"></i><span>4. Data de entrega</span></button>
+        <button data-acao="ordenar"><i class="fa-solid fa-arrow-down-wide-short"></i><span>5. Ordenar tarefas</span></button>
+        <button data-acao="salvar"><i class="fa-regular fa-floppy-disk"></i><span>6. Salvamento automático</span></button>
+        <button data-acao="progresso"><i class="fa-solid fa-chart-line"></i><span>7. Estatísticas e progresso</span></button>
+        <button data-acao="subtarefas"><i class="fa-solid fa-list-check"></i><span>8. Subtarefas</span></button>
+        <button data-acao="favoritas"><i class="fa-regular fa-star"></i><span>9. Favoritas</span></button>
+        <button data-acao="duplicar"><i class="fa-regular fa-copy"></i><span>10. Duplicar tarefa</span></button>
+        <button data-acao="exportar"><i class="fa-regular fa-file-excel"></i><span>11. Exportar para CSV</span></button>
+        <button data-acao="lixeira"><i class="fa-regular fa-trash-can"></i><span>12. Lixeira e restauração</span></button>
+        <button data-acao="lembretes"><i class="fa-regular fa-bell"></i><span>13. Ativar lembretes</span></button>
+        <button data-acao="historico"><i class="fa-solid fa-clock-rotate-left"></i><span>14. Histórico de conclusão</span></button>
+        <button data-acao="calendario"><i class="fa-regular fa-calendar-days"></i><span>15. Calendário de tarefas</span></button>
+        <button data-acao="pomodoro"><i class="fa-regular fa-clock"></i><span>16. Cronômetro Pomodoro</span></button>
+        <button data-acao="meta"><i class="fa-solid fa-bullseye"></i><span>17. Meta diária</span></button>
+        <button data-acao="atrasadas"><i class="fa-solid fa-triangle-exclamation"></i><span>18. Tarefas atrasadas</span></button>
+        <button data-acao="conquistas"><i class="fa-solid fa-trophy"></i><span>19. Sistema de conquistas</span></button>
+        <button data-acao="tema"><i class="fa-regular fa-moon"></i><span>20. Tema claro/escuro</span></button>
       </div>
     </section>
 
-    <section class="cartao">
-      <h2><i class="fa-solid fa-bullseye"></i> Meta diária</h2>
-      <p>Defina quantas tarefas deseja concluir hoje.</p>
-      <div class="linha-meta">
-        <div class="campo-meta">
-          <label for="meta-diaria">Tarefas por dia</label>
-          <input id="meta-diaria" type="number" min="1" max="100" value="5">
+    <div id="notificacao" class="notificacao escondido" role="status" aria-live="polite"></div>
+
+    <!-- ESTATÍSTICAS -->
+    <section class="estatisticas" id="secao-estatisticas">
+      <article class="cartao-estatistica">
+        <span class="estatistica-icone"><i class="fa-regular fa-rectangle-list"></i></span>
+        <div><p>Total de tarefas</p><strong id="contador-tarefas">0</strong></div>
+      </article>
+      <article class="cartao-estatistica">
+        <span class="estatistica-icone"><i class="fa-regular fa-circle-check"></i></span>
+        <div><p>Concluídas</p><strong id="contador-concluidas">0</strong></div>
+      </article>
+      <article class="cartao-estatistica">
+        <span class="estatistica-icone"><i class="fa-regular fa-hourglass-half"></i></span>
+        <div><p>Pendentes</p><strong id="contador-pendentes">0</strong></div>
+      </article>
+    </section>
+
+    <!-- PROGRESSO E META DIÁRIA -->
+    <section class="progresso" id="secao-progresso">
+      <div class="progresso-titulo">
+        <div><span class="sobretitulo">ACOMPANHAMENTO</span><h2>Seu progresso</h2></div>
+        <strong id="porcentagem-progresso">0%</strong>
+      </div>
+      <div class="barra"><div id="progresso-preenchido"></div></div>
+      <p id="mensagem-progresso">Toda conquista começa com o primeiro passo.</p>
+
+      <div class="meta-diaria">
+        <label for="campo-meta">Meta diária de tarefas concluídas</label>
+        <div class="meta-linha">
+          <input id="campo-meta" type="number" min="1" max="100" value="3">
+          <span id="texto-meta">0 de 3 concluídas hoje</span>
         </div>
-        <button class="botao-secundario" id="salvar-meta" type="button">Salvar meta</button>
+        <div class="barra barra-meta"><div id="progresso-meta"></div></div>
       </div>
-      <div class="linha-progresso">
-        <span id="texto-meta">0 de 5 tarefas concluídas hoje</span>
-        <strong id="percentual-meta">0%</strong>
-      </div>
-      <div class="barra"><div id="barra-meta"></div></div>
     </section>
 
-    <section class="cartao">
-      <h2><i class="fa-solid fa-plus"></i> Nova tarefa</h2>
-      <form id="form-tarefa">
-        <label for="campo-tarefa">Nome da tarefa</label>
-        <input id="campo-tarefa" maxlength="120" placeholder="Ex.: Estudar para a prova..." required>
+    <!-- FORMULÁRIO DE TAREFAS -->
+    <section id="secao-formulario" class="bloco">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">PLANEJE SEU DIA</span><h2 id="titulo-formulario">Nova tarefa</h2></div>
+        <i class="fa-regular fa-pen-to-square titulo-icone"></i>
+      </div>
 
-        <div class="campos">
+      <form id="formulario-tarefa">
+        <label for="campo-tarefa">O que você precisa fazer?</label>
+        <div class="linha-formulario">
+          <input id="campo-tarefa" type="text" maxlength="100" placeholder="Escreva sua próxima tarefa..." required>
+          <button id="botao-adicionar" type="submit"><i class="fa-solid fa-plus"></i> Adicionar</button>
+        </div>
+
+        <div class="detalhes-formulario">
           <div>
             <label for="campo-prioridade">Prioridade</label>
             <select id="campo-prioridade">
-              <option value="baixa">Baixa</option>
-              <option value="media" selected>Média</option>
+              <option value="media">Média</option>
               <option value="alta">Alta</option>
+              <option value="baixa">Baixa</option>
             </select>
           </div>
           <div>
-            <label for="campo-data">Prazo</label>
-            <input id="campo-data" type="date">
+            <label for="campo-prazo">Data de entrega</label>
+            <input id="campo-prazo" type="date">
+          </div>
+          <div class="campo-subtarefas">
+            <label for="campo-subtarefas">Subtarefas (separe por vírgulas)</label>
+            <input id="campo-subtarefas" type="text" maxlength="250" placeholder="Ex.: pesquisar, estudar, revisar">
           </div>
         </div>
-        <button class="botao-principal" type="submit">
-          <i class="fa-solid fa-plus"></i> Adicionar tarefa
-        </button>
+
+        <div id="botoes-edicao" class="escondido botoes-edicao">
+          <button type="button" id="botao-cancelar-edicao" class="botao-secundario">Cancelar edição</button>
+        </div>
       </form>
     </section>
 
-    <section class="cartao">
-      <h2><i class="fa-solid fa-list-check"></i> Minha lista</h2>
-      <label for="campo-pesquisa">Pesquisar</label>
-      <input id="campo-pesquisa" type="search" placeholder="Buscar tarefa...">
+    <!-- LISTA DE TAREFAS -->
+    <section id="secao-lista" class="bloco">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">SEU PLANEJAMENTO</span><h2 id="titulo-lista">Lista de tarefas</h2></div>
+        <button id="botao-limpar" class="botao-texto" title="Mover todas para a lixeira" aria-label="Mover todas para a lixeira">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+      </div>
 
-      <div class="campos">
-        <div>
-          <label for="filtro-status">Filtrar</label>
-          <select id="filtro-status">
-            <option value="todas">Todas</option>
-            <option value="pendentes">Pendentes</option>
-            <option value="concluidas">Concluídas</option>
-            <option value="favoritas">Favoritas</option>
-          </select>
+      <div class="controles-lista">
+        <div class="pesquisa">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="campo-pesquisa" type="search" placeholder="Buscar tarefa...">
         </div>
-        <div>
-          <label for="ordenacao">Ordenar por</label>
-          <select id="ordenacao">
-            <option value="recentes">Mais recentes</option>
-            <option value="prioridade">Prioridade</option>
-            <option value="data">Prazo</option>
-            <option value="alfabetica">Alfabética</option>
-          </select>
-        </div>
+        <select id="filtro-status" aria-label="Filtrar tarefas">
+          <option value="todas">Todos os status</option>
+          <option value="pendentes">Pendentes</option>
+          <option value="concluidas">Concluídas</option>
+          <option value="favoritas">Favoritas</option>
+          <option value="atrasadas">Atrasadas</option>
+        </select>
+        <select id="filtro-ordem" aria-label="Ordenar tarefas">
+          <option value="recentes">Mais recentes</option>
+          <option value="antigas">Mais antigas</option>
+          <option value="alfabetica">A–Z</option>
+          <option value="conclusao">Concluídas primeiro</option>
+          <option value="prazo">Data de entrega</option>
+          <option value="prioridade">Prioridade</option>
+        </select>
       </div>
 
-      <ul id="lista-tarefas" class="lista"></ul>
-      <p id="mensagem-vazia" class="vazio">Nenhuma tarefa cadastrada.</p>
-
-      <div class="botoes-linha">
-        <button class="botao-secundario" id="botao-exportar" type="button">
-          <i class="fa-solid fa-file-csv"></i> Exportar CSV
-        </button>
-        <button class="botao-secundario perigo" id="botao-limpar" type="button">
-          <i class="fa-solid fa-broom"></i> Limpar lista
-        </button>
-        <button class="botao-secundario" id="botao-lixeira" type="button">
-          <i class="fa-solid fa-trash-can"></i> Lixeira
-        </button>
+      <div class="filtro-prioridade">
+        <label for="filtro-prioridade">Prioridade:</label>
+        <select id="filtro-prioridade">
+          <option value="todas">Todas</option>
+          <option value="alta">Alta</option>
+          <option value="media">Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+        <button id="botao-sair-lixeira" class="botao-secundario escondido" type="button">Voltar às tarefas</button>
       </div>
-    </section>
 
-    <section class="cartao" id="secao-lixeira" hidden>
-      <div class="titulo-linha">
-        <h2><i class="fa-solid fa-trash-can"></i> Lixeira</h2>
-        <button class="icone" id="fechar-lixeira" type="button" aria-label="Fechar lixeira">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <ul id="lista-lixeira" class="lista"></ul>
-      <p id="lixeira-vazia" class="vazio">A lixeira está vazia.</p>
-      <button class="botao-secundario perigo" id="esvaziar-lixeira" type="button">Esvaziar lixeira</button>
-    </section>
-
-    <!-- FUNCIONALIDADE 16: CALENDÁRIO -->
-    <section class="cartao">
-      <h2><i class="fa-solid fa-calendar-days"></i> Calendário de tarefas</h2>
-      <p>Escolha uma data para ver as tarefas programadas.</p>
-      <label for="data-calendario">Selecionar dia</label>
-      <input id="data-calendario" type="date">
-      <div id="resumo-calendario" class="aviso-calendario"></div>
-      <ul id="lista-calendario" class="lista"></ul>
-      <p id="calendario-vazio" class="vazio">Selecione uma data para consultar as tarefas.</p>
-    </section>
-
-    <!-- FUNCIONALIDADE 17: POMODORO -->
-    <section class="cartao foco">
-      <h2><i class="fa-solid fa-stopwatch"></i> Cronômetro de foco</h2>
-      <p>Concentre-se em uma atividade e faça pausas regulares.</p>
-      <div class="pomodoro-opcoes">
-        <button type="button" class="botao-secundario modo-pomodoro ativo" data-minutos="25" data-modo="foco">Foco · 25 min</button>
-        <button type="button" class="botao-secundario modo-pomodoro" data-minutos="5" data-modo="pausa">Pausa · 5 min</button>
-      </div>
-      <div id="rotulo-pomodoro">Hora de focar!</div>
-      <div id="relogio-pomodoro" aria-live="polite">25:00</div>
-      <div class="botoes-linha centralizado">
-        <button class="botao-principal" id="iniciar-pomodoro" type="button">
-          <i class="fa-solid fa-play"></i> Iniciar
-        </button>
-        <button class="botao-secundario" id="reiniciar-pomodoro" type="button">
-          <i class="fa-solid fa-rotate-left"></i> Reiniciar
-        </button>
+      <ul id="lista-tarefas"></ul>
+      <div id="mensagem-vazia" class="mensagem-vazia">
+        <i class="fa-regular fa-folder-open"></i>
+        <p>Nenhuma tarefa por aqui.</p>
+        <span>Adicione uma tarefa para começar.</span>
       </div>
     </section>
 
-    <footer>Seu progresso começa com um pequeno passo. ✨</footer>
+    <!-- CALENDÁRIO -->
+    <section id="secao-calendario" class="bloco">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">VISÃO POR DATA</span><h2>Calendário de tarefas</h2></div>
+        <i class="fa-regular fa-calendar-days titulo-icone"></i>
+      </div>
+      <div class="linha-calendario">
+        <label for="campo-data-calendario">Ver tarefas do dia</label>
+        <input type="date" id="campo-data-calendario">
+      </div>
+      <div id="lista-calendario" class="lista-calendario"></div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section id="secao-historico" class="bloco">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">SEUS AVANÇOS</span><h2>Histórico de conclusão</h2></div>
+        <i class="fa-solid fa-clock-rotate-left titulo-icone"></i>
+      </div>
+      <ul id="lista-historico" class="lista-historico"></ul>
+      <p id="historico-vazio" class="texto-suave">As tarefas concluídas aparecerão aqui.</p>
+    </section>
+
+    <!-- LIXEIRA -->
+    <section id="secao-lixeira" class="bloco escondido">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">VOCÊ PODE RECUPERAR</span><h2>Lixeira</h2></div>
+        <i class="fa-regular fa-trash-can titulo-icone"></i>
+      </div>
+      <ul id="lista-lixeira" class="lista-lixeira"></ul>
+      <p id="lixeira-vazia" class="texto-suave">A lixeira está vazia.</p>
+      <button id="botao-esvaziar-lixeira" class="botao-secundario" type="button">Esvaziar lixeira permanentemente</button>
+    </section>
+
+    <!-- CONQUISTAS -->
+    <section id="secao-conquistas" class="bloco">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">CADA PASSO CONTA</span><h2>Minhas conquistas</h2></div>
+        <i class="fa-solid fa-award titulo-icone"></i>
+      </div>
+      <div class="conquistas">
+        <article class="conquista" id="conquista-primeira">
+          <i class="fa-regular fa-star"></i>
+          <div><strong>Primeiro passo</strong><p>Conclua sua primeira tarefa.</p></div>
+          <span class="status-conquista">Bloqueada</span>
+        </article>
+        <article class="conquista" id="conquista-cinco">
+          <i class="fa-solid fa-medal"></i>
+          <div><strong>Em ritmo constante</strong><p>Conclua 5 tarefas.</p></div>
+          <span class="status-conquista">Bloqueada</span>
+        </article>
+        <article class="conquista" id="conquista-dez">
+          <i class="fa-solid fa-crown"></i>
+          <div><strong>Organização exemplar</strong><p>Conclua 10 tarefas.</p></div>
+          <span class="status-conquista">Bloqueada</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- POMODORO -->
+    <section id="secao-pomodoro" class="bloco pomodoro">
+      <div class="titulo-bloco">
+        <div><span class="sobretitulo">FOCO E PAUSAS</span><h2>Hora de se concentrar</h2></div>
+        <i class="fa-regular fa-clock titulo-icone"></i>
+      </div>
+      <p class="texto-pomodoro">Reserve um tempo para estudar sem distrações.</p>
+      <div id="temporizador" class="temporizador">25:00</div>
+      <div class="botoes-pomodoro">
+        <button id="botao-iniciar-pomodoro"><i class="fa-solid fa-play"></i> Iniciar</button>
+        <button id="botao-pausar-pomodoro" class="botao-secundario"><i class="fa-solid fa-pause"></i> Pausar</button>
+        <button id="botao-reiniciar-pomodoro" class="botao-secundario"><i class="fa-solid fa-arrow-rotate-left"></i> Reiniciar</button>
+      </div>
+    </section>
+
+    <footer><i class="fa-solid fa-feather-pointed"></i> Meu Painel de Tarefas <span>·</span> SENAI</footer>
   </main>
 
-  <div class="modal-fundo" id="modal-info" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
-      <button class="icone fechar-modal" id="fechar-modal" type="button" aria-label="Fechar">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      <h2 id="titulo-modal">Funcionalidades do painel</h2>
-      <ul class="lista-info">
-        <li>Adicionar, editar, duplicar e concluir tarefas.</li>
-        <li>Definir prioridade e prazo.</li>
-        <li>Pesquisar, filtrar, ordenar e favoritar tarefas.</li>
-        <li>Acompanhar estatísticas e meta diária.</li>
-        <li>Consultar tarefas no calendário.</li>
-        <li>Usar o cronômetro Pomodoro.</li>
-        <li>Restaurar tarefas da lixeira.</li>
-        <li>Exportar os dados em CSV.</li>
-        <li>Alternar o tema e salvar dados no navegador.</li>
-      </ul>
-      <button class="botao-principal" id="entendi-modal" type="button">Entendi!</button>
-    </section>
-  </div>
+  <script src="script.js"></script>
 </body>
 </html>
